@@ -9,10 +9,29 @@ BKnave = Symbol("B is a Knave")
 CKnight = Symbol("C is a Knight")
 CKnave = Symbol("C is a Knave")
 
+
+kb = And(
+    Or(
+        And(AKnight, Not(AKnave)),
+        And(Not(AKnight), AKnave)
+    ),
+    Or(
+        And(BKnight, Not(BKnave)),
+        And(Not(BKnight), BKnave)
+    ),
+    Or(
+        And(CKnight, Not(CKnave)),
+        And(Not(CKnight), CKnave)
+    )
+)
+
 # Puzzle 0
 # A says "I am both a knight and a knave."
 knowledge0 = And(
     # TODO
+    kb,
+    Implication(And(AKnight, AKnave), AKnight),
+    Implication(Not(And(AKnight, AKnave)), AKnave)
 )
 
 # Puzzle 1
@@ -20,6 +39,9 @@ knowledge0 = And(
 # B says nothing.
 knowledge1 = And(
     # TODO
+    kb, 
+    Implication(And(AKnave, BKnave), AKnight),
+    Implication(Not(And(AKnave, BKnave)), AKnave)
 )
 
 # Puzzle 2
@@ -27,6 +49,31 @@ knowledge1 = And(
 # B says "We are of different kinds."
 knowledge2 = And(
     # TODO
+    kb,
+    #If A's statement is true
+    Implication(Or(
+        And(AKnight, BKnight),
+        And(AKnave, BKnave)
+    ), AKnight),
+
+    #If A's statement is false
+    Implication(Not(Or(
+        And(AKnight, BKnight),
+        And(AKnave, BKnave)
+    )), AKnave),
+
+    #If B's Statement is true
+    Implication(Or(
+        And(AKnight, BKnave),
+        And(AKnave, BKnight)
+    ), BKnight),
+
+    #If B's statement is false
+    Implication(Not(Or(
+        And(AKnight, BKnave),
+        And(AKnave, BKnight)
+    )), BKnave)
+
 )
 
 # Puzzle 3
@@ -36,6 +83,29 @@ knowledge2 = And(
 # C says "A is a knight."
 knowledge3 = And(
     # TODO
+    kb, 
+    #If A's statement is true
+    Implication(
+        Or(AKnave, AKnight),
+        AKnight
+    ),
+    #If A's statement is false
+    Implication(
+        Not(Or(AKnave, AKnight)),
+        AKnave),
+    #According to B's statement
+    Or(
+        Implication(BKnight, Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave)))),
+        Implication(BKnave, Or(Implication(AKnight, AKnave), Implication(AKnave, Not(AKnave))))
+    ),
+    #If B's statement about C is true
+    Implication(BKnight, CKnave),
+    #If B's statemenet about C is false
+    Implication(BKnave, CKnight),
+    #If C's statement is true
+    Biconditional(CKnight, AKnight),
+    #If C's statement is false
+    Biconditional(CKnave, AKnave)
 )
 
 
