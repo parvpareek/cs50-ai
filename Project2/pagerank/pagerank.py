@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import copy
 import sys
 
 DAMPING = 0.85
@@ -13,18 +14,14 @@ def main():
     corpus = crawl(sys.argv[1])
     ranks = sample_pagerank(corpus, DAMPING, SAMPLES)
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
-    sum = 0
     for page in sorted(ranks):
         print(f"  {page}: {ranks[page]:.4f}")
         sum += ranks[page]
     ranks = iterate_pagerank(corpus, DAMPING)
-    print(sum)
     print(f"PageRank Results from Iteration")
-    sum = 0
     for page in sorted(ranks):
         print(f"  {page}: {ranks[page]:.4f}")
         sum += ranks[page]
-    print(sum)
 
 
 
@@ -74,9 +71,6 @@ def transition_model(corpus, page, damping_factor):
             distribution[page] = (1/len(corpus))
         return distribution
     
-
-    
-
     for each_page in corpus:
         probability = 0
         if each_page in links:
@@ -131,54 +125,65 @@ def iterate_pagerank(corpus, damping_factor):
     PageRank values should sum to 1.    
     """
 
-    dict = {}
+    linked_by_dict = {}
     page_rank = {}
+    new_pr = {}
     N = len(corpus)
 
-    # Iterate through every page in the corpus
     for page in corpus:
-        # Set the page rank of each page to a default value
+
+        # Assign the page rank for each page in the corpus to be 1/N
         page_rank[page] = 1/N
 
-        if len(corpus[page]) == 0:
-            corpus[page] = set(corpus.keys())
-
-        # Find all the pages that to link to the current page in the loop and map it in the dictionary
-        linked_by = set()
-        
         # Create a set of pages that link to the current page
+        linked_by = set()
+        # Nested loop that iterates through the corpus to look for a link to the page in the outside loop
         for each_page in corpus:
-            if page == each_page:
-                continue
-            if page in corpus[each_page] or len(corpus[each_page])== 0:
+            
+            # If a page links to 0 pages. Make it so that it links to every page
+            if len(corpus[each_page]) == 0:
+                corpus[each_page] = set(corpus.keys())
                 linked_by.add(each_page)
-        # Map the set to the current poage in a dictionary
-        dict[page] = linked_by
-    
+                continue
+            
+            # If page links to current page add it to the set
+            if page in corpus[each_page]:
+                linked_by.add(each_page)
+
+        # Create a dictionary of key-value pairs of pages and all the pages that link to it
+        linked_by_dict[page] = linked_by
+
+                    
+    num = 0
     while True:
+
+
         converged = True
-        # For every page in the corpus
+
         for page in corpus:
             
-            # First term of the equation which is a constant
+            # Assigning the first term
             pr = (1 - damping_factor)/N
 
-            # Loop through every page that links to the current page
-            for linked_page in dict[page]:
-                # Add the remaining terms which is the pagerank of the linking page divided by the number of links present in the linking page
-                num_links = len(corpus[linked_page])
-                pr +=  damping_factor*(page_rank[linked_page]/num_links)
+            # Looping through pages that link to my page to add the rest of the terms
+            for i in linked_by_dict[page]:
+                num_links = len(corpus[i])
+                pr += damping_factor*(page_rank[i]/num_links)
 
-            
-            difference = abs(page_rank[page] - pr)
+            new_pr[page] = pr
 
+        for page in corpus:
+            # Check the difference
+            difference = abs(new_pr[page] - page_rank[page])
             if difference > 0.001:
                 converged = False
-                page_rank[page] = pr
+                
         if converged:
-            return page_rank
-
-
+            return new_pr
+        num += 1
+        
+        page_rank = copy.deepcopy(new_pr)
+        
 
 
 if __name__ == "__main__":
